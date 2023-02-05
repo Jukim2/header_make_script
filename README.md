@@ -2,4 +2,9 @@
 Purpose : 
 To generate header automatically
 
-Description : 
+Target :
+All c files in current directories and subdiretories
+
+Description :
+search all the target files and return a file named 'prototypes' that has function prototypes written in it.
+Or you can give file name as a parameter.
