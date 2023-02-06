@@ -1,3 +1,4 @@
+EXCLUDE="*bonus*"
 FILE_NAME=$1;
 START_DIR=$2;
 SECTION=$3;
@@ -14,9 +15,9 @@ then
 	SECTION=1;
 fi
 L_LEN=0;
-TAB_TOTAL=0;
+TAB='@';
+TAB_MAX=0;
 TAB_REQUIRED=0;
-TAB='!';
 COPY_END=0;
 COPY_START=0;
 TOTAL_SRC_FILES=0;
@@ -59,38 +60,45 @@ process_bar()
 {
 	# Increment the count of processed files
 	PROCESSED_FILES=$((PROCESSED_FILES + 1))
+
 	# Calculate the percentage of processed files
-	PERCENTAGE=$((100 * PROCESSED_FILES / TOTAL_SRC_FILES))
+	PERCENTAGE=$((20 * PROCESSED_FILES / TOTAL_SRC_FILES))
+
 	# Display the progress bar
 	echo -n "["
 	for i in $(seq 1 $PERCENTAGE); do
 		echo -en "\033[33m=\033[0m"
 	done
-	for i in $(seq 1 $((100 - PERCENTAGE))); do
+	for i in $(seq 1 $((20 - PERCENTAGE))); do
 		echo -n " "
 	done
-	echo -n "] $PERCENTAGE% ($PROCESSED_FILES/$TOTAL_SRC_FILES)"
+	echo -n "] $((5 * $PERCENTAGE))% ($PROCESSED_FILES/$TOTAL_SRC_FILES)"
 	if [ $PROCESSED_FILES -ne $TOTAL_SRC_FILES ]
 	then
 		echo -ne "\r"
 	else
-		echo -e '\n'"\033[32m✅ Header file created successfully ✅\033[0m"
+		echo -e '\n'"\033[32m✅ Header file created ✅\033[0m"
 	fi
 }
 
+# Before thinking about function prototypes, check 42 Header and Header Guard first.
+# tmp_header_42 file is temporary file which will be header file later.
+# if there is pre-existing file, We will use that file.
 if [ -f $FILE_NAME ]
 then
+	# Find if 42header exist or not
 	HEADER_END=$(($(cat "$FILE_NAME" | grep -n "###   ########.fr" | tail -1 | cut -d ':' -f1) + 2))
+	# if 42header doesn't exist, make and put it
 	if [ "$HEADER_END" -eq 2 ]
 	then
 		make_42header >> tmp_header_42
-		echo -e '\n'
 		HEADER_END=0;
 	else
 		cat $FILE_NAME | head -$HEADER_END >> tmp_header_42
-		echo -e '\n'
 	fi
+	# Find if header guard exist or not
 	H_GUARD_END=$(cat $FILE_NAME | grep -n "$H_GUARD" | tail -1 | cut -d ':' -f1)
+	# if header guard doesn't exist, make and put it
 	if [ -z $H_GUARD_END ]
 	then
 		header_guard >> tmp_header_42
@@ -98,98 +106,100 @@ then
 	else
 		cat $FILE_NAME | head -$H_GUARD_END | tail -$(($H_GUARD_END - $HEADER_END)) >> tmp_header_42
 	fi
+	# Update H_GUARD_END to use it in the next if part
 	if [ $H_GUARD_END -lt $HEADER_END ]
 	then
 		H_GUARD_END=$HEADER_END
 	fi
+	# Find line number, before which contents should be conserved(includes, structs ...)
 	COPY_END=$(grep -s -n '}\|define\|include' $FILE_NAME | tail -1 | cut -d ':' -f1)
 	if [ ! -z $COPY_END ]
 	then
 		cat $FILE_NAME | head -$COPY_END | tail -$(($COPY_END - $H_GUARD_END)) >> tmp_header_42
 	fi
 else
+	# if there was no file named $FILE_NAME, put 42 header and h_guard to tmp file which will be header file later.
 	make_42header >> tmp_header_42
-	echo -e >> '\n'
 	header_guard >> tmp_header_42
 fi
 
+# Search every c file and find function that has longest space before function name.
+# And calculate TAB_MAX, amount of tab need for function which has short return type like 'int'.
 for dir in $(find $START_DIR -type d)
 do
-	for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name '*bonus*')
+	for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE")
 	do
 		TOTAL_SRC_FILES=$(($TOTAL_SRC_FILES + 1))
-		funcs=$(cat $file  | grep '(' | grep ')' | grep -v ';\|if\|while\|for\|switch\|+\|=\|-\|||\|&&\|main\|static' | sed 's/)$/);/g') 
-		for key in $(echo -e "$funcs" | tr ' ' '#' | cut -d $'\t' -f1)
+		FUNCS=$(cat $file  | grep '(' | grep ')' | grep -v ';\|if\|while\|for\|switch\|+\|=\|-\|||\|&&\|main\|static' | sed 's/)$/);/g') 
+		for key in $(echo -e "$FUNCS" | tr ' ' '#' | cut -d $'\t' -f1)
 		do
-			len=${#key}
-			if [ $L_LEN -lt $len ]
+			LEN=${#key}
+			if [ $L_LEN -lt $LEN ]
 			then
-				L_LEN=$len
+				L_LEN=$LEN
 			fi
 		done
 	done
-	TAB_TOTAL=$(expr $L_LEN / 4 + 1);
+	TAB_MAX=$(expr $L_LEN / 4 + 1);
 done
+
+# For every directory from START_DIR
 for dir in $(find $START_DIR -type d)
 do
-	cnt_c_file=$(find $dir  -type f -name '*.c' ! -name '*bonus*' | wc -l)
-	if [ $cnt_c_file -lt 1 ]
+	# count c files in 'dir'
+	cnt_c_file=$(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE" | wc -l)
+	# if no c files exist, move to next direction
+	if [ $cnt_c_file -eq 0 ]
 	then
 		continue ;
 	fi
+	# if SECTION option is 1, write dir
 	if [ $SECTION -eq 1 ]
 	then
 		echo -e '\n'"/* ===============$dir=============== */"'\n' >> tmp_header_42
 	fi
-	for file in $(find $dir -maxdepth 1 -type f -name '*.c' -and ! -name '*bonus*')
+	for file in $(find $dir -maxdepth 1 -type f -name '*.c' -and ! -name "$EXCLUDE")
 	do
+		# show process_bar
 		process_bar
+		# if SECTION option is 0, write file name
 		if [ $SECTION -eq 0 ]
 		then
 			echo -e '\n'"/* $file */"'\n' >> tmp_header_42
 		fi
-		funcs=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&\|main\|static' | sed 's/)$/);/g')
-		for func in $(echo -e "$funcs" | tr ' ' '#' | tr '\t' '!')
+		# Get function prototypes and conditional statement
+		# (name like 'spotify' includes 'if')
+		funcs=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
+		for func in $(echo -e "$funcs" | tr ' ' '#' | tr '\t' '@')
 		do
-			key=$(echo -e "$func" | cut -d '!' -f1)
-			if [ ${#key} -lt 1 ]
+			# Exclude conditional statement and static function
+			key=$(echo -e "$func" | cut -d '@' -f1)
+			if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
 			then
 				continue ;
 			fi
-			tab_occupied=$(expr ${#key} / 4)
-			TAB_REQUIRED=$(($TAB_TOTAL - $tab_occupied))
+			# Exclude main function
+			if [ $(echo -e "$func" | cut -d '@' -f2 | cut -d '(' -f1) = "main" ]
+			then
+				continue ;
+			fi
+			# Calculate How many tabs this fucntion needs
+			TAB_OCCUPIED=$(expr ${#key} / 4)
+			TAB_REQUIRED=$(($TAB_MAX - $TAB_OCCUPIED))
 			for ((i=1; i < $TAB_REQUIRED; i++))
 			do
-				TAB=$TAB'!'
+				TAB=$TAB'@'
 			done
-			echo $func | sed "s/!/$TAB/" | tr '!' '\t' | tr '#' ' ' >> tmp_header_42
-			TAB='!';
+			# put all the tabs and spaces and write in tmp_header_42
+			echo $func | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
+			TAB='@';
 		done
 	done
 done
 
-
+# Close header guard
 echo -e '\n''#endif' >> tmp_header_42
 
+# Remove original file and replace by tmp_header_42
 rm -f $FILE_NAME
 mv tmp_header_42 $FILE_NAME
-rm -f tmp_header_42
-
-echo "manual : ham [FILE_NAME] [START_DIR] [SECTION]"
-
-# FILE_NAME : string
-# 	You can decide your name of header file.
-# 	Default is 'header.h'
-
-# START_DIR : dir
-# 	You can specify directory to start searching.
-# 	Write based on current directory.
-# 	Default is current directory.
-	
-# section : 0 or 1
-# 	This option is about choosing which way to make header file.
-# 	if you choose 0, prototypes will be divded by files.
-# 	if you choose 1, prototypes will be divided by only directories.
-# 	Default is 1
-# "
-
