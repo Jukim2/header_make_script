@@ -1,4 +1,4 @@
-EXCLUDE="*bonus*"
+EXCLUDE="*bonus.c"
 FILE_NAME=$1;
 START_DIR=$2;
 SECTION=$3;
@@ -77,7 +77,7 @@ process_bar()
 	then
 		echo -ne "\r"
 	else
-		echo -e '\n'"\033[32m✅ Header file created ✅\033[0m"
+		echo -e '\n'"\033[32m✅ '$FILE_NAME' created ✅\033[0m"
 	fi
 }
 
