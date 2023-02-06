@@ -12,6 +12,8 @@ if [ "$(uname)" != "Darwin" ]; then
 	fi
 fi
 
-if !cat $RC_FILE | grep 'header_make.sh'; then
+if [ $(cat $RC_FILE | grep 'header_make.sh' | wc -l) -eq 0 ] 
+then
 	echo -e "\nalias ham=\"bash $HOME/header_make.sh\"" >> "$RC_FILE"
 fi
+
