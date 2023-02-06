@@ -23,3 +23,7 @@ if you choose 0, prototypes will be divded by files.
 if you choose 1, prototypes will be divided by only directories.
 
 Default is 1
+
+```
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Jukim2/header_make_script/main/download.sh)"
+```
