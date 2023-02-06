@@ -84,11 +84,11 @@ then
 	if [ "$HEADER_END" -eq 2 ]
 	then
 		make_42header >> tmp_header_42
-		echo -e >> '\n'
+		echo -e '\n'
 		HEADER_END=0;
 	else
 		cat $FILE_NAME | head -$HEADER_END >> tmp_header_42
-		echo -e >> '\n'
+		echo -e '\n'
 	fi
 	H_GUARD_END=$(cat $FILE_NAME | grep -n "$H_GUARD" | tail -1 | cut -d ':' -f1)
 	if [ -z $H_GUARD_END ]
