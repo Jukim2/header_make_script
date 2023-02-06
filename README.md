@@ -1,6 +1,6 @@
 # header_make_script
 
-echo "manual : ham [FILE_NAME] [START_DIR] [SECTION]"
+"manual : ham [FILE_NAME] [START_DIR] [SECTION]"
 
 FILE_NAME : string
 	You can decide your name of header file.
