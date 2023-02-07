@@ -17,4 +17,4 @@ then
 	echo -e "\nalias ham=\"bash $HOME/header_make.sh\"" >> "$RC_FILE"
 fi
 
-source ~/.zshrc
+exec "$SHELL"
