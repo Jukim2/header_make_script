@@ -8,14 +8,14 @@ SPLIT=0;
 while getopts n:d:e:sh opt
 do
         case $opt in
-                n) 	FILE=$OPTARG;;
-                d) 	START_DIR=$OPTARG;;
-                s)	SPLIT=1;;
-		e)	EXCLUDE_PATH="*$OPTARG*";;
-		h) 	echo "ham [-n File] [-d Directory] [-s Split]"
-			exit;;
-                *) 	echo "ham [-n File] [-d Directory] [-s Split]"
-			exit;;
+        	n) 	FILE=$OPTARG;;
+            d) 	START_DIR=$OPTARG;;
+            s)	SPLIT=1;;
+			e)	EXCLUDE_PATH="*$OPTARG*";;
+			h) 	echo "ham [-n File] [-d Directory] [-s Split]"
+				exit;;
+            *) 	echo "ham [-n File] [-d Directory] [-s Split]"
+				exit;;
         esac
 done
 # GET only FILE_NAME (includes/header.h => header.h)
@@ -79,8 +79,12 @@ main()
 	do
 		for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE")
 		do
-			TOTAL_SRC_FILES=$(($TOTAL_SRC_FILES + 1))
 			FUNCS=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
+			if [ $(echo $FUNCS | wc -l) -eq 0 ]
+			then
+				continue ;
+			fi
+			TOTAL_SRC_FILES=$(($TOTAL_SRC_FILES + 1))
 			for func in $(echo -e "$FUNCS" | tr ' ' '#' | tr '\t' '@')
 			do
                 # Exclude conditional statement and static function
@@ -103,7 +107,12 @@ main()
 		done
 		TAB_MAX=$(expr $L_LEN / 4 + 1);
 	done
-
+	if [ $TOTAL_SRC_FILES -eq 0 ]
+	then
+		rm tmp_header_42
+		echo -e "\033[31mNo valid functions. You have only main function?\033[0m"
+		exit ;
+	fi
 	# For every directory from START_DIR
 	for dir in $(find $START_DIR -type d -not -path "$EXCLUDE_PATH")
 	do
@@ -130,22 +139,39 @@ main()
 			fi
 			# Get function prototypes and conditional statement
 			# (name like 'spotify' includes 'if')
-			FUNCS=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
-			for func in $(echo -e "$FUNCS" | tr ' ' '#' | tr '\t' '@')
+			FUNCS=$(cat $file | grep -n '(' | grep '\t' | grep -v "==\|++\|return\|-\|=\|||\|&&\|>\|<\|;" | tr ' ' '#' | tr '\t' '@')
+			for func in $(echo -e "$FUNCS")
 			do
+				if [ $(echo -e $func | cut -d ':' -f2 | cut -b 1) = '@' ]
+				then
+					continue ;
+				fi
+				START_LINE=$(echo -e $func | cut -d ':' -f1)
+				END_LINE=$START_LINE;
+				while [ $(awk -v var="$END_LINE" 'NR == var' $file | grep '{' | wc -l) -eq 0 ]
+				do
+					END_LINE=$(($END_LINE + 1))
+					if [ $(($END_LINE - $START_LINE)) -gt 30 ]
+					then
+						echo -e "\033[31mFunction with no brace...?\033[0m"
+						rm tmp_header_42
+						exit ;
+					fi
+				done
+				func=$(echo $func | cut -d ':' -f2)
 				TAB='@';
 				# Exclude conditional statement and static function
-				key=$(echo -e "$func" | cut -d '@' -f1)
-				if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
+				if [ $(echo $func | cut -d '@' -f1 | grep 'static' | wc -l) -eq 1 ]
 				then
 					continue ;
 				fi
 				# Exclude main function
-				if [ $(echo -e "$func" | cut -d '@' -f2 | cut -d '(' -f1) = "main" ]
+				if [ $(echo $func | cut -d '@' -f2 | cut -d '(' -f1) = "main" ]
 				then
 					continue ;
 				fi
 				# Calculate How many tabs this fucntion needs
+				key=$(echo $func | cut -d '@' -f1)
 				TAB_OCCUPIED=$(expr ${#key} / 4)
 				TAB_REQUIRED=$(($TAB_MAX - $TAB_OCCUPIED))
 				for ((i=1; i < $TAB_REQUIRED; i++))
@@ -153,7 +179,13 @@ main()
 					TAB=$TAB'@'
 				done
 				# put all the tabs and spaces and write in tmp_header_42
-				echo $func | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
+				if [ $(($END_LINE - $START_LINE)) -eq 1 ]
+				then
+					awk -v var1=$START_LINE -v var2=$(($END_LINE - 1)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
+				else
+					awk -v var1=$START_LINE -v var2=$(($END_LINE - 2)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
+					echo "$TAB)" | tr '@' '\t' >> tmp_header_42
+				fi
 			done
 		done
 	done
@@ -233,4 +265,4 @@ process_bar()
 	fi
 }
 
-main "$@"
+main
