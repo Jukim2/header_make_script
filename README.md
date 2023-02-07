@@ -40,7 +40,7 @@ You can set the starting directory and target directory will be starting directo
     
     set path that would be excluded during the search. (mostly would be libft)
     
-    Or you can open script file and set default path that would be excluded by just changing the variable on the third line
+    Or you can open script file and set default path that would be excluded by just changing the variable on the fourth line of script
     
 
 ## How to use
