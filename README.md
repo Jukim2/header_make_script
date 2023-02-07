@@ -1,34 +1,31 @@
 # header_make_script
 
-Script for making header file easily and automatically
+Script for making header file easily and automatically.
 
-Script searches all the c files in the target directory and make a header file.
-
-You can set the starting directory and target directory will be starting directory and  subdirectories
+It searches all the c files in the target directory and make a header file.
 
 ⚠️ files end with 'bonus.c' will be excluded by default. You can change this by commenting out the second line of script.
   
   It is in the home directory.
 
-⚠️ It generates 42header and header guard but It does not update 42header
 
 ## Description
 
 ### ham [-n File] [-d Directory] [-s Seperation] [-e Exclude] [-h Help]
 
-- **File** :
+- **-n File** :
     
     Set Name of header file
     
     Default is 'header.h'
     
-- **Directory** : 
+- **-d Directory** : 
     
     Set Starting directory
     
     Default is current directory.
     
-- **Seperation** :
+- **-s Seperation** :
     
     This option is about choosing way of seperating prototypes
     
@@ -36,7 +33,7 @@ You can set the starting directory and target directory will be starting directo
     
     Adding -s option will split prototypes by file.
     
-- **Exclude** :
+- **-e Exclude** :
     
     set path that would be excluded during the search. (mostly would be libft)
     
@@ -54,14 +51,11 @@ You can set the starting directory and target directory will be starting directo
         It means script will change only the part about function prototypes.
         
 
-**Case 2** : If you want to search only for the directory ‘./srcs’, two ways are possible
+**Case 2** : Want C files under certain Directory like './srcs'
 
-- Go to ./srcs directory and write `ham -n myheader.h`
-- In the root directory just write `ham -n myheader.h -d ./srcs`
+- write `ham -n myheader.h -d ./srcs`
 
-Of course at each case, header file will be saved in different directory so you might specify the directory you want your header file to be saved. Like `ham -n ./includes/myheader.h`
-
-**Case 3** : if you want to split function prototypes by file use -s option
+**Case 3** : Want to split function prototypes by file
 
 - Write `ham -n myheader.h -s` with no option argument. Then prototypes will be seperated in other way.
 
