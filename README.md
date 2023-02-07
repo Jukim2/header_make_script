@@ -1,7 +1,5 @@
 # header_make_script
 
-## Description
-
 Script for making header file easily and automatically
 
 Script searches all the c files in the target directory and make a header file.
@@ -30,6 +28,8 @@ Of course at each case, header file will be saved in different directory so you 
 
 - Write `ham -n myheader.h -s` with no option argument. Then prototypes will be seperated in other way.
 
+## Description
+
 ### ham [-n File] [-d Directory] [-s Seperation]
 
 - **File** :
@@ -38,7 +38,7 @@ Of course at each case, header file will be saved in different directory so you 
     
     Default is 'header.h'
     
-- **Directory** : dir
+- **Directory** : 
     
     Set Starting directory
     
@@ -54,6 +54,6 @@ Of course at each case, header file will be saved in different directory so you 
 
 ## Installation
 
-```c
+```
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Jukim2/header_make_script/main/download.sh)"
 ```
