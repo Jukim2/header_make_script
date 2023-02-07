@@ -138,7 +138,6 @@ main()
 				key=$(echo -e "$func" | cut -d '@' -f1)
 				if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
 				then
-                    echo $func
 					continue ;
 				fi
 				# Exclude main function
