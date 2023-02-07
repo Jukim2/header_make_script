@@ -44,16 +44,13 @@ Of course at each case, header file will be saved in different directory so you 
     
     Default is current directory.
     
-- **Seperation** : 0 or 1
+- **Seperation** :
     
-    This option is about choosing way of making header file.
+    This option is about choosing way of seperating prototypes
     
-    if you choose 0, prototypes will be divded by files.
+    Default is split prototypes by directory.
     
-    if you choose 1, prototypes will be divided by only directories.
-    
-    Default is 1
-    
+    Adding -s option will split prototypes by file.
 
 ## Installation
 
