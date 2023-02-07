@@ -80,9 +80,20 @@ main()
 		for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE")
 		do
 			TOTAL_SRC_FILES=$(($TOTAL_SRC_FILES + 1))
-			FUNCS=$(cat $file  | grep '(' | grep ')' | grep -v ';\|if\|while\|for\|switch\|+\|=\|-\|||\|&&\|main\|static' | sed 's/)$/);/g') 
-			for key in $(echo -e "$FUNCS" | tr ' ' '#' | cut -d $'\t' -f1)
+			FUNCS=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
+			for func in $(echo -e "$FUNCS" | tr ' ' '#' | tr '\t' '@')
 			do
+                # Exclude conditional statement and static function
+				key=$(echo -e "$func" | cut -d '@' -f1)
+				if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
+				then
+					continue ;
+				fi
+				# Exclude main function
+				if [ $(echo -e "$func" | cut -d '@' -f2 | cut -d '(' -f1) = "main" ]
+				then
+					continue ;
+				fi
 				LEN=${#key}
 				if [ $L_LEN -lt $LEN ]
 				then
@@ -119,14 +130,15 @@ main()
 			fi
 			# Get function prototypes and conditional statement
 			# (name like 'spotify' includes 'if')
-			funcs=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
-			for func in $(echo -e "$funcs" | tr ' ' '#' | tr '\t' '@')
+			FUNCS=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
+			for func in $(echo -e "$FUNCS" | tr ' ' '#' | tr '\t' '@')
 			do
 				TAB='@';
 				# Exclude conditional statement and static function
 				key=$(echo -e "$func" | cut -d '@' -f1)
 				if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
 				then
+                    echo $func
 					continue ;
 				fi
 				# Exclude main function
