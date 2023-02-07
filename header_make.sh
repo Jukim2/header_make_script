@@ -11,11 +11,11 @@ do
                 n) 	FILE=$OPTARG;;
                 d) 	START_DIR=$OPTARG;;
                 s)	SPLIT=1;;
-				e)	EXCLUDE_PATH="*$OPTARG*";;
-				h) 	echo "ham [-n File] [-d Directory] [-s Split]"
-					exit;;
+		e)	EXCLUDE_PATH="*$OPTARG*";;
+		h) 	echo "ham [-n File] [-d Directory] [-s Split]"
+			exit;;
                 *) 	echo "ham [-n File] [-d Directory] [-s Split]"
-					exit;;
+			exit;;
         esac
 done
 # GET only FILE_NAME (includes/header.h => header.h)
