@@ -6,6 +6,12 @@ Script searches all the c files in the target directory and make a header file.
 
 You can set the starting directory and target directory will be starting directory and  subdirectories
 
+⚠️ files end with 'bonus.c' will be excluded by default. You can change this by commenting out the second line of script.
+  
+  It is in the home directory.
+
+⚠️ It generates 42header and header guard but It does not update 42header
+
 ## Description
 
 ### ham [-n File] [-d Directory] [-s Seperation] [-e Exclude] [-h Help]
