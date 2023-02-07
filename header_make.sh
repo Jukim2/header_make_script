@@ -1,25 +1,19 @@
 EXCLUDE="*bonus.c"
 FILE=header.h;
 START_DIR=.;
-SEPERATION=0;
-while getopts n:d:s opt
+SPLIT=0;
+while getopts n:d:sh opt
 do
         case $opt in
-                n) FILE=$OPTARG;;
-                d) START_DIR=$OPTARG;;
-                s) SEPERATION=1;;
-                *) 	echo "Option : [-n File] [-d Directory] [-s Sepearate]"
+                n) 	FILE=$OPTARG;;
+                d) 	START_DIR=$OPTARG;;
+                s)	SPLIT=1;;
+				h) 	echo "ham [-n File] [-d Directory] [-s Split]"
+					exit;;
+                *) 	echo "ham [-n File] [-d Directory] [-s Split]"
 					exit;;
         esac
 done
-L_LEN=0;
-TAB='@';
-TAB_MAX=0;
-TAB_REQUIRED=0;
-COPY_END=0;
-COPY_START=0;
-TOTAL_SRC_FILES=0;
-PROCESSED_FILES=0;
 # GET only FILE_NAME (includes/header.h => header.h)
 FILE_NAME=$(echo $FILE | rev | cut -d '/' -f1 | rev)
 H_GUARD=$(echo $FILE_NAME | tr 'a-z.' 'A-Z_' )
@@ -58,6 +52,10 @@ header_guard()
 
 process_bar()
 {
+	if [ -z $PROCESSED_FILES ]
+	then
+		PROCESSED_FILES=0;
+	fi
 	# Increment the count of processed files
 	PROCESSED_FILES=$((PROCESSED_FILES + 1))
 
@@ -81,7 +79,7 @@ process_bar()
 	then
 		echo -ne "\r"
 	else
-		echo -e '\n'"\033[32m✅ '$FILE' created ✅\033[0m"
+		echo -e '\n'"\033[32m✅ '$FILE' updated ✅\033[0m"
 	fi
 }
 
@@ -106,6 +104,10 @@ then
 	# if header guard doesn't exist, make and put it
 	if [ -z $H_GUARD_END ]
 	then
+		if [ $HEADER_END -ne 0 ] 
+		then
+			echo -ne '\n' >> tmp_header_42
+		fi
 		header_guard >> tmp_header_42
 		H_GUARD_END=0;
 	else
@@ -130,6 +132,8 @@ fi
 
 # Search every c file and find function that has longest space before function name.
 # And calculate TAB_MAX, amount of tab need for function which has short return type like 'int'.
+L_LEN=0;
+TOTAL_SRC_FILES=0;
 for dir in $(find $START_DIR -type d)
 do
 	for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE")
@@ -158,8 +162,8 @@ do
 	then
 		continue ;
 	fi
-	# if SEPERATION option is 1, write dir
-	if [ $SEPERATION -eq 0 ]
+	# if SPLIT option is 1, write dir
+	if [ $SPLIT -eq 0 ]
 	then
 		echo -e '\n'"/* ===============$dir=============== */"'\n' >> tmp_header_42
 	fi
@@ -167,8 +171,8 @@ do
 	do
 		# show process_bar
 		process_bar
-		# if SEPERATION option is 0, write file name
-		if [ $SEPERATION -eq 1 ]
+		# if SPLIT option is 0, write file name
+		if [ $SPLIT -eq 1 ]
 		then
 			echo -e '\n'"/* $file */"'\n' >> tmp_header_42
 		fi
@@ -177,6 +181,7 @@ do
 		funcs=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
 		for func in $(echo -e "$funcs" | tr ' ' '#' | tr '\t' '@')
 		do
+			TAB='@';
 			# Exclude conditional statement and static function
 			key=$(echo -e "$func" | cut -d '@' -f1)
 			if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
@@ -197,7 +202,6 @@ do
 			done
 			# put all the tabs and spaces and write in tmp_header_42
 			echo $func | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
-			TAB='@';
 		done
 	done
 done
