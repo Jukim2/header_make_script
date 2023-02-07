@@ -151,8 +151,10 @@ main()
 	echo -e '\n''#endif' >> tmp_header_42
 
 	# Remove original file and replace it by tmp_header_42
-	rm -f $FILE
-	mv tmp_header_42 $FILE
+	# rm -f $FILE
+    touch $FILE
+	cat tmp_header_42 > $FILE
+    rm tmp_header_42
 }
 
 make_42header()
