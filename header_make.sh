@@ -1,13 +1,17 @@
+# Change this var to set default exclude file
 EXCLUDE="*bonus.c"
+# Change this var to set default exclude path
+# EXCLUDE_PATH="*libft*"
 FILE=header.h;
 START_DIR=.;
 SPLIT=0;
-while getopts n:d:sh opt
+while getopts n:d:e:sh opt
 do
         case $opt in
                 n) 	FILE=$OPTARG;;
                 d) 	START_DIR=$OPTARG;;
                 s)	SPLIT=1;;
+				e)	EXCLUDE_PATH="*$OPTARG*";;
 				h) 	echo "ham [-n File] [-d Directory] [-s Split]"
 					exit;;
                 *) 	echo "ham [-n File] [-d Directory] [-s Split]"
@@ -71,7 +75,7 @@ main()
 	# And calculate TAB_MAX, amount of tab need for function which has short return type like 'int'.
 	L_LEN=0;
 	TOTAL_SRC_FILES=0;
-	for dir in $(find $START_DIR -type d)
+	for dir in $(find $START_DIR -type d -not -path "$EXCLUDE_PATH")
 	do
 		for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE")
 		do
@@ -90,7 +94,7 @@ main()
 	done
 
 	# For every directory from START_DIR
-	for dir in $(find $START_DIR -type d)
+	for dir in $(find $START_DIR -type d -not -path "$EXCLUDE_PATH")
 	do
 		# count c files in 'dir'
 		cnt_c_file=$(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE" | wc -l)
