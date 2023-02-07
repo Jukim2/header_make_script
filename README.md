@@ -8,7 +8,7 @@ You can set the starting directory and target directory will be starting directo
 
 ## Description
 
-### ham [-n File] [-d Directory] [-s Seperation]
+### ham [-n File] [-d Directory] [-s Seperation] [-e Exclude] [-h Help]
 
 - **File** :
     
@@ -29,12 +29,19 @@ You can set the starting directory and target directory will be starting directo
     Default is split prototypes by directory.
     
     Adding -s option will split prototypes by file.
+    
+- **Exclude** :
+    
+    set path that would be excluded during the search. (mostly would be libft)
+    
+    Or you can open script file and set default path that would be excluded by just changing the variable on the third line
+    
 
 ## How to use
 
-**Case 1** : Suppose you want to make ‘myheader.h’ including all the function prototypes in c files below current directory
+**Basic Use** : Make ‘myheader.h’ including all the function prototypes in c files below current directory
 
-- Write `ham -n myheader.h`
+- `ham -n myheader.h`
     1. If you didn’t have ‘myheader.h’ then file will be made with 42 Header, Header Guard, function prototypes
     2. If you did have it, then we will update that file preserving 42 Header, Header Guard, Includes, Define, structs
         
