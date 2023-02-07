@@ -1,19 +1,17 @@
 EXCLUDE="*bonus.c"
-FILE_NAME=$1;
-START_DIR=$2;
-SECTION=$3;
-if [ -z $1 ]
-then
-	FILE_NAME=header.h;
-fi
-if [ -z $2 ]
-then
-	START_DIR=.;
-fi
-if [ -z $3 ]
-then
-	SECTION=1;
-fi
+FILE=header.h;
+START_DIR=.;
+SEPERATION=0;
+while getopts n:d:s opt
+do
+        case $opt in
+                n) FILE=$OPTARG;;
+                d) START_DIR=$OPTARG;;
+                s) SEPERATION=1;;
+                *) 	echo "Option : [-n File] [-d Directory] [-s Sepearate]"
+					exit;;
+        esac
+done
 L_LEN=0;
 TAB='@';
 TAB_MAX=0;
@@ -22,6 +20,8 @@ COPY_END=0;
 COPY_START=0;
 TOTAL_SRC_FILES=0;
 PROCESSED_FILES=0;
+# GET only FILE_NAME (includes/header.h => header.h)
+FILE_NAME=$(echo $FILE | rev | cut -d '/' -f1 | rev)
 H_GUARD=$(echo $FILE_NAME | tr 'a-z.' 'A-Z_' )
 
 make_42header()
@@ -66,10 +66,14 @@ process_bar()
 
 	# Display the progress bar
 	echo -n "["
-	for i in $(seq 1 $PERCENTAGE); do
+	for i in $(seq 0 $PERCENTAGE); do
 		echo -en "\033[33m=\033[0m"
 	done
-	for i in $(seq 1 $((20 - PERCENTAGE))); do
+	for i in $(seq 0 $((19 - PERCENTAGE))); do
+		if [ $PERCENTAGE -eq 20 ]
+		then
+			continue
+		fi
 		echo -n " "
 	done
 	echo -n "] $((5 * $PERCENTAGE))% ($PROCESSED_FILES/$TOTAL_SRC_FILES)"
@@ -77,34 +81,35 @@ process_bar()
 	then
 		echo -ne "\r"
 	else
-		echo -e '\n'"\033[32m✅ '$FILE_NAME' created ✅\033[0m"
+		echo -e '\n'"\033[32m✅ '$FILE' created ✅\033[0m"
 	fi
 }
 
 # Before thinking about function prototypes, check 42 Header and Header Guard first.
-# tmp_header_42 file is temporary file which will be header file later.
+
 # if there is pre-existing file, We will use that file.
-if [ -f $FILE_NAME ]
+if [ -f $FILE ]
 then
 	# Find if 42header exist or not
-	HEADER_END=$(($(cat "$FILE_NAME" | grep -n "###   ########.fr" | tail -1 | cut -d ':' -f1) + 2))
+	HEADER_END=$(($(cat "$FILE" | grep -n "###   ########.fr" | tail -1 | cut -d ':' -f1) + 2))
 	# if 42header doesn't exist, make and put it
 	if [ "$HEADER_END" -eq 2 ]
 	then
+		# tmp_header_42 file is temporary file which will be header file later.
 		make_42header >> tmp_header_42
 		HEADER_END=0;
 	else
-		cat $FILE_NAME | head -$HEADER_END >> tmp_header_42
+		cat $FILE | head -$HEADER_END >> tmp_header_42
 	fi
 	# Find if header guard exist or not
-	H_GUARD_END=$(cat $FILE_NAME | grep -n "$H_GUARD" | tail -1 | cut -d ':' -f1)
+	H_GUARD_END=$(cat $FILE | grep -n "$H_GUARD" | tail -1 | cut -d ':' -f1)
 	# if header guard doesn't exist, make and put it
 	if [ -z $H_GUARD_END ]
 	then
 		header_guard >> tmp_header_42
 		H_GUARD_END=0;
 	else
-		cat $FILE_NAME | head -$H_GUARD_END | tail -$(($H_GUARD_END - $HEADER_END)) >> tmp_header_42
+		cat $FILE | head -$H_GUARD_END | tail -$(($H_GUARD_END - $HEADER_END)) >> tmp_header_42
 	fi
 	# Update H_GUARD_END to use it in the next if part
 	if [ $H_GUARD_END -lt $HEADER_END ]
@@ -112,10 +117,10 @@ then
 		H_GUARD_END=$HEADER_END
 	fi
 	# Find line number, before which contents should be conserved(includes, structs ...)
-	COPY_END=$(grep -s -n '}\|define\|include' $FILE_NAME | tail -1 | cut -d ':' -f1)
+	COPY_END=$(grep -s -n '}\|define\|include' $FILE | tail -1 | cut -d ':' -f1)
 	if [ ! -z $COPY_END ]
 	then
-		cat $FILE_NAME | head -$COPY_END | tail -$(($COPY_END - $H_GUARD_END)) >> tmp_header_42
+		cat $FILE | head -$COPY_END | tail -$(($COPY_END - $H_GUARD_END)) >> tmp_header_42
 	fi
 else
 	# if there was no file named $FILE_NAME, put 42 header and h_guard to tmp file which will be header file later.
@@ -153,8 +158,8 @@ do
 	then
 		continue ;
 	fi
-	# if SECTION option is 1, write dir
-	if [ $SECTION -eq 1 ]
+	# if SEPERATION option is 1, write dir
+	if [ $SEPERATION -eq 0 ]
 	then
 		echo -e '\n'"/* ===============$dir=============== */"'\n' >> tmp_header_42
 	fi
@@ -162,8 +167,8 @@ do
 	do
 		# show process_bar
 		process_bar
-		# if SECTION option is 0, write file name
-		if [ $SECTION -eq 0 ]
+		# if SEPERATION option is 0, write file name
+		if [ $SEPERATION -eq 1 ]
 		then
 			echo -e '\n'"/* $file */"'\n' >> tmp_header_42
 		fi
@@ -200,6 +205,6 @@ done
 # Close header guard
 echo -e '\n''#endif' >> tmp_header_42
 
-# Remove original file and replace by tmp_header_42
-rm -f $FILE_NAME
-mv tmp_header_42 $FILE_NAME
+# Remove original file and replace it by tmp_header_42
+rm -f $FILE
+mv tmp_header_42 $FILE
