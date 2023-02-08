@@ -45,7 +45,7 @@ main()
 		# if header guard doesn't exist, make and put it
 		if [ -z $H_GUARD_END ]
 		then
-			if [ $HEADER_END -ne 0 ] 
+			if [ $HEADER_END -ne 0 ]
 			then
 				echo -ne '\n' >> tmp_header_42
 			fi
@@ -135,19 +135,22 @@ main()
 			fi
 			# Get function prototypes and conditional statement
 			FUNCS=$(cat $file | grep -n '(' | grep '\t' | grep -v "==\|++\|return\|-\|=\|||\|&&\|>\|<\|;" | tr ' ' '#' | tr '\t' '@')
-			for func in $(echo -e "$FUNCS")
+			for func in $(echo "$FUNCS")
 			do
 				# Rid of conditional statement
-				if [ $(echo -e $func | cut -d ':' -f2 | cut -b 1) = '@' ]
+				if [ $(echo "$func" | cut -d ':' -f2 | cut -b 1) = '@' ]
 				then
 					continue ;
 				fi
-				START_LINE=$(echo -e $func | cut -d ':' -f1)
-				BRACE_LINE=$(($START_LINE + 1))
+				START_LINE=$(echo "$func" | cut -d ':' -f1)
+				BRACE_LINE=$(expr $START_LINE + 1)
+				# BRACE_LINE=$(($START_LINE + 1))
 				while [ $(awk -v var="$BRACE_LINE" 'NR == var' $file | grep '{' | wc -l) -eq 0 ]
 				do
-					BRACE_LINE=$(($BRACE_LINE + 1))
-					if [ $(($BRACE_LINE - $START_LINE)) -gt 30 ]
+					# BRACE_LINE=$(($BRACE_LINE + 1))
+					BRACE_LINE=$(expr $BRACE_LINE + 1)
+					# if [ $(($BRACE_LINE - $START_LINE)) -gt 30 ]
+					if [ $(expr $BRACE_LINE - $START_LINE) -gt 30 ]
 					then
 						echo -e "\033[31mFunction with no brace...?\033[0m"
 						rm tmp_prototype_42
@@ -170,20 +173,10 @@ main()
 				do
 					TAB=$TAB'@'
 				done
-				# put all the tabs and spaces and write in tmp_header_42
-				if [ $(($BRACE_LINE - $START_LINE)) -eq 1 ]
-				then
-					awk -v var1=$START_LINE -v var2=$(($BRACE_LINE - 1)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' | sed 's/)$/);/g' >> tmp_prototype_42
-				else
-					awk -v var1=$START_LINE 'NR == var1' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_prototype_42
-					TAB=$TAB'@'
-					awk -v var1=$(($START_LINE + 1)) -v var2=$(($BRACE_LINE - 2)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_prototype_42
-					echo "$TAB);" | tr '@' '\t' >> tmp_prototype_42
-				fi
+				awk -v var1=$START_LINE -v var2=$(($BRACE_LINE - 1)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' | sed 's/)$/);/g' >> tmp_prototype_42
 			done
-			
+
 		done
-		
 		if [ $(cat tmp_prototype_42 | wc -l) -ne 0 ]
 		then
 			# if SPLIT option is 1, write dir
