@@ -7,16 +7,16 @@ START_DIR=.;
 SPLIT=0;
 while getopts n:d:e:sh opt
 do
-        case $opt in
-        	n) 	FILE=$OPTARG;;
-            d) 	START_DIR=$OPTARG;;
-            s)	SPLIT=1;;
+		case $opt in
+			n) 	FILE=$OPTARG;;
+			d) 	START_DIR=$OPTARG;;
+			s)	SPLIT=1;;
 			e)	EXCLUDE_PATH="*$OPTARG*";;
 			h) 	echo "ham [-n File] [-d Directory] [-s Split]"
 				exit;;
-            *) 	echo "ham [-n File] [-d Directory] [-s Split]"
+			*) 	echo "ham [-n File] [-d Directory] [-s Split]"
 				exit;;
-        esac
+		esac
 done
 # GET only FILE_NAME (includes/header.h => header.h)
 FILE_NAME=$(echo $FILE | rev | cut -d '/' -f1 | rev)
@@ -79,15 +79,15 @@ main()
 	do
 		for file in $(find $dir -maxdepth 1 -type f -name '*.c' ! -name "$EXCLUDE")
 		do
-			FUNCS=$(cat $file | grep '(' | grep ')' | grep '\t' | grep -v ';\|+\|=\|-\|||\|&&' | sed 's/)$/);/g')
+			FUNCS=$(cat $file | grep '(' | grep '\t' | grep -v "==\|++\|return\|-\|=\|||\|&&\|>\|<\|;" | tr ' ' '#' | tr '\t' '@')
 			if [ $(echo $FUNCS | wc -l) -eq 0 ]
 			then
 				continue ;
 			fi
 			TOTAL_SRC_FILES=$(($TOTAL_SRC_FILES + 1))
-			for func in $(echo -e "$FUNCS" | tr ' ' '#' | tr '\t' '@')
+			for func in $(echo -e "$FUNCS")
 			do
-                # Exclude conditional statement and static function
+				# Exclude conditional statement and static function
 				key=$(echo -e "$func" | cut -d '@' -f1)
 				if [ ${#key} -lt 1 ] || [ $(echo $key | cut -d '#' -f1 | grep 'static' | wc -l) -eq 1 ]
 				then
@@ -123,50 +123,42 @@ main()
 		then
 			continue ;
 		fi
-		# if SPLIT option is 1, write dir
-		if [ $SPLIT -eq 0 ]
-		then
-			echo -e '\n'"/* ===============$dir=============== */"'\n' >> tmp_header_42
-		fi
 		for file in $(find $dir -maxdepth 1 -type f -name '*.c' -and ! -name "$EXCLUDE")
 		do
+			touch tmp_prototype_42
 			# show process_bar
 			process_bar
 			# if SPLIT option is 0, write file name
 			if [ $SPLIT -eq 1 ]
 			then
-				echo -e '\n'"/* $file */"'\n' >> tmp_header_42
+				echo -e '\n'"/* $file */"'\n' >> tmp_prototype_42
 			fi
 			# Get function prototypes and conditional statement
-			# (name like 'spotify' includes 'if')
 			FUNCS=$(cat $file | grep -n '(' | grep '\t' | grep -v "==\|++\|return\|-\|=\|||\|&&\|>\|<\|;" | tr ' ' '#' | tr '\t' '@')
 			for func in $(echo -e "$FUNCS")
 			do
+				# Rid of conditional statement
 				if [ $(echo -e $func | cut -d ':' -f2 | cut -b 1) = '@' ]
 				then
 					continue ;
 				fi
 				START_LINE=$(echo -e $func | cut -d ':' -f1)
-				END_LINE=$START_LINE;
-				while [ $(awk -v var="$END_LINE" 'NR == var' $file | grep '{' | wc -l) -eq 0 ]
+				BRACE_LINE=$(($START_LINE + 1))
+				while [ $(awk -v var="$BRACE_LINE" 'NR == var' $file | grep '{' | wc -l) -eq 0 ]
 				do
-					END_LINE=$(($END_LINE + 1))
-					if [ $(($END_LINE - $START_LINE)) -gt 30 ]
+					BRACE_LINE=$(($BRACE_LINE + 1))
+					if [ $(($BRACE_LINE - $START_LINE)) -gt 30 ]
 					then
 						echo -e "\033[31mFunction with no brace...?\033[0m"
+						rm tmp_prototype_42
 						rm tmp_header_42
 						exit ;
 					fi
 				done
 				func=$(echo $func | cut -d ':' -f2)
 				TAB='@';
-				# Exclude conditional statement and static function
-				if [ $(echo $func | cut -d '@' -f1 | grep 'static' | wc -l) -eq 1 ]
-				then
-					continue ;
-				fi
-				# Exclude main function
-				if [ $(echo $func | cut -d '@' -f2 | cut -d '(' -f1) = "main" ]
+				# Exclude static and main function
+				if [ $(echo $func | cut -d '@' -f1 | grep 'static' | wc -l) -eq 1 ] || [ $(echo $func | cut -d '@' -f2 | cut -d '(' -f1) = "main" ]
 				then
 					continue ;
 				fi
@@ -179,15 +171,29 @@ main()
 					TAB=$TAB'@'
 				done
 				# put all the tabs and spaces and write in tmp_header_42
-				if [ $(($END_LINE - $START_LINE)) -eq 1 ]
+				if [ $(($BRACE_LINE - $START_LINE)) -eq 1 ]
 				then
-					awk -v var1=$START_LINE -v var2=$(($END_LINE - 1)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
+					awk -v var1=$START_LINE -v var2=$(($BRACE_LINE - 1)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' | sed 's/)$/);/g' >> tmp_prototype_42
 				else
-					awk -v var1=$START_LINE -v var2=$(($END_LINE - 2)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_header_42
-					echo "$TAB)" | tr '@' '\t' >> tmp_header_42
+					awk -v var1=$START_LINE 'NR == var1' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_prototype_42
+					TAB=$TAB'@'
+					awk -v var1=$(($START_LINE + 1)) -v var2=$(($BRACE_LINE - 2)) 'NR >= var1 && NR <= var2' $file | tr ' ' '#' | tr '\t' '@' | sed "s/@/$TAB/" | tr '@' '\t' | tr '#' ' ' >> tmp_prototype_42
+					echo "$TAB);" | tr '@' '\t' >> tmp_prototype_42
 				fi
 			done
+			
 		done
+		
+		if [ $(cat tmp_prototype_42 | wc -l) -ne 0 ]
+		then
+			# if SPLIT option is 1, write dir
+			if [ $SPLIT -eq 0 ]
+			then
+				echo -e '\n'"/* ===============$dir=============== */"'\n' >> tmp_header_42
+			fi
+			cat tmp_prototype_42 >> tmp_header_42
+		fi
+		rm tmp_prototype_42
 	done
 
 	# Close header guard
@@ -195,9 +201,9 @@ main()
 
 	# Remove original file and replace it by tmp_header_42
 	# rm -f $FILE
-    touch $FILE
+	touch $FILE
 	cat tmp_header_42 > $FILE
-    rm tmp_header_42
+	rm tmp_header_42
 }
 
 make_42header()
