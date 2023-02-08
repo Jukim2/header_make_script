@@ -5,7 +5,6 @@ Script for making header file easily and automatically.
 It searches all the c files in the target directory and make a header file.
 
 ⚠️ files end with 'bonus.c' will be excluded by default. You can change this by commenting out the second line of script.
-  
   It is in the home directory.
 
 
