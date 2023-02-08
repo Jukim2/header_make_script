@@ -260,7 +260,7 @@ process_bar()
 	then
 		echo -ne "\r"
 	else
-		echo -e '\n'"\033[32m✅ '$FILE' updated ✅\033[0m"
+		echo -e '\n'"\033[32m✅ '$FILE' updated by JUKIM2🤟SANAN ✅\033[0m"
 	fi
 }
 
