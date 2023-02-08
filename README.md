@@ -42,7 +42,7 @@ It searches all the c files in the target directory and make a header file.
 
 ## How to use
 
-**Basic Use** : Make ‘myheader.h’ including all the function prototypes in c files below current directory
+**Case 1 : Basic Use** : Make ‘myheader.h’ including all the function prototypes in c files below current directory
 
 - `ham -n myheader.h`
     1. If you didn’t have ‘myheader.h’ then file will be made with 42 Header, Header Guard, function prototypes
