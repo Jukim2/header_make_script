@@ -9,6 +9,12 @@ It searches all the c files in the target directory and make a header file.
   
 ⚠️ Use Tab to indent between return type and function name(Norminette)
 
+## Installation
+
+```
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Jukim2/header_make_script/main/download.sh)"
+```
+
 ## Description
 
 ### ham [-n File] [-d Directory] [-s Seperation] [-e Exclude] [-h Help]
@@ -59,8 +65,4 @@ It searches all the c files in the target directory and make a header file.
 
 - Write `ham -n myheader.h -s` with no option argument. Then prototypes will be seperated in other way.
 
-## Installation
 
-```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Jukim2/header_make_script/main/download.sh)"
-```
